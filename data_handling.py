@@ -6,6 +6,7 @@ from pathlib import Path
 from tqdm.auto import tqdm
 import torchvision.transforms as TF
 from torch.utils.data import Dataset, DataLoader
+import torch
 
 
 _lbl_folder = Path('_data_lbls')
@@ -49,14 +50,23 @@ _normalize = TF.Normalize(mean=[0.485, 0.456, 0.406],
 _to_tensor = TF.ToTensor()
 
 class DiseaseDataset(Dataset):
-    def __init__(self, idxs, imgs, diseases):
+    def __init__(self, idxs, imgs, diseases, augm=None):
         self.idxs = idxs
         self.diseases = diseases
         self.imgs = imgs
+        self.augm = augm
     def __len__(self): return len(self.idxs)
     def __getitem__(self, i):
         idx = self.idxs[i]
         img, lbl = self.imgs[idx], self.diseases[idx]
+        if self.augm is not None: img = self.augm(image=img)['image']
         img = _to_tensor(img)
         img = _normalize(img)
         return img, lbl
+
+def show_tensor(img):
+    img = img * torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1) + torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)
+    img = img.detach().cpu().numpy()
+    img = np.moveaxis(img, 0, -1)
+    img = np.uint8(img * 255)
+    return Image.fromarray(img)

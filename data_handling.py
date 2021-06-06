@@ -59,7 +59,9 @@ class DiseaseDataset(Dataset):
     def __getitem__(self, i):
         idx = self.idxs[i]
         img, lbl = self.imgs[idx], self.diseases[idx]
-        if self.augm is not None: img = self.augm(image=img)['image']
+        if self.augm is not None: 
+            img = self.augm(images=[img])[0]
+            # img = self.augm(image=img)['image']
         img = _to_tensor(img)
         img = _normalize(img)
         return img, lbl

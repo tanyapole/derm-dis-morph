@@ -28,15 +28,16 @@ class NoSaver(ModelSaver):
     def update(self, model, metrics):
         pass
 
-def _form_path(fldr, acc, epoch):
-    return fldr / f'model_{epoch}_acc{acc:.4f}.pth'
+def _form_path(fldr, target_metric_value, epoch):
+    return fldr / f'model_{epoch}_val{target_metric_value:.4f}.pth'
 
 class ImprovementModelSaver(ModelSaver):
-    def __init__(self, save_fldr, device):
+    def __init__(self, save_fldr, device, target_metric):
         super().__init__(save_fldr, device)
+        self.target_metric = target_metric
         self.best_acc = -1
     def update(self, model, metrics):
-        cur_acc = metrics['val/acc']
+        cur_acc = metrics[self.target_metric]
         if curr_acc > self.best_acc:
             self.best_acc = cur_acc
             epoch = metrics['epoch']
@@ -44,12 +45,13 @@ class ImprovementModelSaver(ModelSaver):
             _save_model(model, pt, self.device)
             
 class BestModelSaver(ModelSaver):
-    def __init__(self, save_fldr, device):
+    def __init__(self, save_fldr, device, target_metric):
         super().__init__(save_fldr, device)
+        self.target_metric = target_metric
         self.best_acc = -1
         self.best_epoch = None
     def update(self, model, metrics):
-        cur_acc = metrics['val/acc']
+        cur_acc = metrics[self.target_metric]
         cur_epoch = metrics['epoch']
         if cur_acc > self.best_acc:
             if self.best_epoch is not None:

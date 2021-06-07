@@ -1,8 +1,8 @@
 import argparse
+from data_specific import *
 
 # data
 from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
 import data_handling
 import augmenting as A
 
@@ -13,7 +13,6 @@ import torch, torch.nn as nn
 from tqdm.auto import tqdm
 
 _default_bs = 30
-
 
 def _base_run_name(config):
     def add(s, s1):
@@ -32,9 +31,10 @@ def _run_name(config):
     name += f' lr={config.lr}'
     return name
 
-def main(config):
+def main(data, config):
     # wandb
-    run = wandb.init(project='derm-dis-morph', config=config)
+    project_name = get_project_name(data)
+    run = wandb.init(project=project_name, config=config)
     run.name = _run_name(run.config)
     
     # config env
@@ -47,25 +47,18 @@ def main(config):
         print(model_saver.save_fldr)
     
     # data loading
-    datasets = data_handling.get_ds_names(IS_DEMO)
-    print('Using datasets: ', ', '.join(datasets))
-
-    idxs, imgs, diseases = data_handling.load_data(datasets)
-
-    trn_idxs, val_idxs = train_test_split(idxs, train_size=0.8, random_state=0, stratify=[diseases[idx] for idx in idxs])
-
     trn_augm = A.get_augm(run.config.augm)
-    trn_ds = data_handling.DiseaseDataset(trn_idxs, imgs, diseases, trn_augm)
-    val_ds = data_handling.DiseaseDataset(val_idxs, imgs, diseases)
+    ds_create_fn = get_ds_create_fn(data)
+    trn_ds, val_ds = ds_create_fn(trn_augm, IS_DEMO)
 
     bs = run.config.batch_size
     trn_dl = DataLoader(trn_ds, batch_size=bs, shuffle=run.config.shuffle_train)
     val_dl = DataLoader(val_ds, batch_size=bs, shuffle=False)
 
-    NUM_CLASSES = data_handling.NUM_DISEASES
-
     # Prepare training
-    loss_fn = nn.CrossEntropyLoss()
+    NUM_CLASSES = get_num_classes(data)
+    class_mode = get_class_mode(data)
+    loss_fn = training.create_loss_fn(class_mode)
     model = model_creating.create_model(NUM_CLASSES).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=run.config.lr)
     if run.config.plateau:
@@ -73,27 +66,29 @@ def main(config):
 
     # Training
     torch.set_num_threads(2)
+    target_metric = get_target_metric(data)
     common_params = {'model': model, 'optimizer': optimizer, 'loss_fn': loss_fn, 'device': device}
     for epoch in tqdm(list(range(run.config.epochs)), desc='Epoch'):
         D = {'epoch': epoch}
 
         losses, preds, targs = training.step(trn_dl, training.Mode.Train, 'Train', **common_params)
-        metrics = training.compute_metrics('trn', losses, preds, targs)
+        metrics = training.compute_metrics(class_mode, 'trn', losses, preds, targs)
         D = training.append_dict(D, metrics)
 
         losses, preds, targs = training.step(val_dl, training.Mode.Eval, 'Valid', **common_params)
-        metrics = training.compute_metrics('val', losses, preds, targs)
+        metrics = training.compute_metrics(class_mode, 'val', losses, preds, targs)
         D = training.append_dict(D, metrics)
 
         wandb.log(D)
         if run.config.save: model_saver.update(model, D)
-        if run.config.plateau: scheduler.step(D['val/acc'])
-        # print('acc=', D['val/acc'], 'lr=', optimizer.param_groups[0]['lr'])
+        if run.config.plateau: scheduler.step(D[target_metric])
+        # print('acc=', D[target_metric], 'lr=', optimizer.param_groups[0]['lr'])
 
     run.finish();
     
 def _form_parser():
     parser = argparse.ArgumentParser('derm')
+    parser.add_argument('--data', choices=[e.value for e in Data], required=True)
     parser.add_argument('--cuda', type=int, required=True)
     parser.add_argument('--batch_size', type=int, default=_default_bs)
     parser.add_argument('--lr', type=float, default=1e-4)
@@ -122,4 +117,4 @@ if __name__ == '__main__':
     parser = _form_parser()
     args = parser.parse_args()
     config = _to_config(args)
-    main(config)
+    main(args.data, config)

@@ -3,6 +3,7 @@ import sklearn.metrics
 import numpy as np
 from tqdm.auto import tqdm
 import torch
+import torch.nn as nn
 
 
 def _mean(L:list): return sum(L)/len(L)
@@ -10,6 +11,16 @@ def _mean(L:list): return sum(L)/len(L)
 class Mode(Enum):
     Train = 'train'
     Eval = 'eval'
+    
+class ClassificationMode(Enum):
+    Multiclass = 'multiclass'
+    Multilabel = 'multilabel'
+    
+def create_loss_fn(class_mode):
+    if class_mode == ClassificationMode.Multiclass:
+        return nn.CrossEntropyLoss()
+    else:
+        return nn.BCEWithLogitsLoss()
     
 def _np(t): return t.detach().cpu().numpy()
 def _it(t): return _np(t).item()
@@ -38,11 +49,16 @@ def step(dl, mode, phase, model, optimizer, loss_fn, device):
     targs = np.concatenate(targs, axis=0)
     return losses, preds, targs
 
-def compute_metrics(phase, losses, preds, targs):
-    preds = np.argmax(preds, axis=1)
-    return {f'{phase}/loss': _mean(losses),
-         f'{phase}/acc': sklearn.metrics.accuracy_score(targs, preds),
-         f'{phase}/f1': sklearn.metrics.f1_score(targs, preds, average='macro')}
+def compute_metrics(class_mode, phase, losses, preds, targs):
+    if class_mode == ClassificationMode.Multiclass:
+        preds = np.argmax(preds, axis=1)
+        return {f'{phase}/loss': _mean(losses),
+             f'{phase}/acc': sklearn.metrics.accuracy_score(targs, preds),
+             f'{phase}/f1': sklearn.metrics.f1_score(targs, preds, average='macro')}
+    else:
+        preds = (preds > 0) * 1
+        return {f'{phase}/loss': _mean(losses),
+             f'{phase}/f1': sklearn.metrics.f1_score(targs, preds, average='macro')}
 
 def append_dict(D1, D2):
     if len(set(D1.keys()).intersection(set(D2.keys()))) > 0:

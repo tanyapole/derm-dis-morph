@@ -12,6 +12,8 @@ import wandb
 import torch, torch.nn as nn
 from tqdm.auto import tqdm
 
+_default_bs = 30
+
 
 def _base_run_name(config):
     def add(s, s1):
@@ -24,7 +26,11 @@ def _base_run_name(config):
     return s
 
 def _run_name(config):
-    return _base_run_name(config) + f' lr={config.lr}'
+    name = _base_run_name(config)
+    if not config.batch_size == _default_bs:
+        name += f' bs={config.batch_size}'
+    name += f' lr={config.lr}'
+    return name
 
 def main(config):
     # wandb
@@ -89,7 +95,7 @@ def main(config):
 def _form_parser():
     parser = argparse.ArgumentParser('derm')
     parser.add_argument('--cuda', type=int, required=True)
-    parser.add_argument('--batch_size', type=int, default=30)
+    parser.add_argument('--batch_size', type=int, default=_default_bs)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--shuffle_train', action='store_true')

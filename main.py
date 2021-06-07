@@ -92,7 +92,7 @@ def _form_parser():
     parser.add_argument('--cuda', type=int, required=True)
     parser.add_argument('--batch_size', type=int, default=_default_bs)
     parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--shuffle_train', action='store_true')
     parser.add_argument('--plateau', action='store_true')
     parser.add_argument('--save', action='store_true')

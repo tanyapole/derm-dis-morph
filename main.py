@@ -110,9 +110,17 @@ def _to_config(args):
         'demo': args.demo,
         'augm': args.augm
     }
+
+def _to_data(args):
+    for e in Data:
+        if e.value == args.data:
+            return e
+    raise Exception(f'Unsupported data type {data}')
     
 if __name__ == '__main__':
     parser = _form_parser()
     args = parser.parse_args()
     config = _to_config(args)
-    main(args.data, config)
+    data = _to_data(args)
+    print(data, config)
+    main(data, config)

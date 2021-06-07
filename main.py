@@ -37,11 +37,12 @@ def main(data, config):
     
     # config env
     IS_DEMO = run.config.demo
+    target_metric = get_target_metric(data)
     device = torch.device(f'cuda:{run.config.device}')
     if run.config.save:
         save_folder = model_saving.get_save_folder()
         run.config.save_folder = save_folder
-        model_saver = model_saving.BestModelSaver(save_folder, device)
+        model_saver = model_saving.BestModelSaver(save_folder, device, target_metric)
         print(model_saver.save_fldr)
     
     # data loading
@@ -64,7 +65,6 @@ def main(data, config):
 
     # Training
     torch.set_num_threads(2)
-    target_metric = get_target_metric(data)
     common_params = {'model': model, 'optimizer': optimizer, 'loss_fn': loss_fn, 'device': device}
     for epoch in tqdm(list(range(run.config.epochs)), desc='Epoch'):
         D = {'epoch': epoch}

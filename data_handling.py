@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 import torchvision.transforms as TF
 from torch.utils.data import Dataset, DataLoader
 import torch
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 
 
 _lbl_folder = Path('_data_lbls')
@@ -92,20 +92,32 @@ class PrimaryMorphDataset(Dataset):
         for i in self.primary[idx]: lbl[i] = 1
         return img, lbl
     
-def create_disease_datasets(trn_augm, demo:bool):
+def _create_split(fold, idxs, diseases):
+    diseases = [diseases[idx] for idx in idxs]
+    
+    if fold is None:
+        return train_test_split(idxs, train_size=0.8, random_state=0, stratify=diseases)
+    
+    skf = StratifiedKFold(random_state=0, shuffle=True)
+    splits =list(skf.split(idxs, diseases))    
+    trn, val = splits[fold]
+    return [idxs[i] for i in trn], [idxs[i] for i in val]
+        
+    
+def create_disease_datasets(trn_augm, demo:bool, fold=None):
     IS_DEMO = demo
     datasets = get_ds_names(IS_DEMO)
     print('Using datasets: ', ', '.join(datasets))
 
     idxs, imgs, diseases, _ = load_data(datasets)
 
-    trn_idxs, val_idxs = train_test_split(idxs, train_size=0.8, random_state=0, stratify=[diseases[idx] for idx in idxs])
-
+    trn_idxs, val_idxs =  _create_split(fold, idxs, diseases)
+    
     trn_ds = DiseaseDataset(trn_idxs, imgs, diseases, trn_augm)
     val_ds = DiseaseDataset(val_idxs, imgs, diseases)
     return trn_ds, val_ds
 
-def create_primary_datasets(trn_augm, demo:bool):
+def create_primary_datasets(trn_augm, demo:bool, fold=None):
     IS_DEMO = demo
     datasets = get_ds_names(IS_DEMO)
     print('Using datasets: ', ', '.join(datasets))
@@ -113,7 +125,7 @@ def create_primary_datasets(trn_augm, demo:bool):
     idxs, imgs, diseases, morph = load_data(datasets)
     primary = to_primary(morph)
 
-    trn_idxs, val_idxs = train_test_split(idxs, train_size=0.8, random_state=0, stratify=[diseases[idx] for idx in idxs])
+    trn_idxs, val_idxs =  _create_split(fold, idxs, diseases)
     trn_idxs = [idx for idx in trn_idxs if len(primary[idx]) > 0]
     val_idxs = [idx for idx in val_idxs if len(primary[idx]) > 0]
     

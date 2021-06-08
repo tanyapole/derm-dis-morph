@@ -48,7 +48,7 @@ def main(data, config, tags):
     # data loading
     trn_augm = A.get_augm(run.config.augm)
     ds_create_fn = get_ds_create_fn(data)
-    trn_ds, val_ds = ds_create_fn(trn_augm, IS_DEMO)
+    trn_ds, val_ds = ds_create_fn(trn_augm, IS_DEMO, run.config.fold)
 
     bs = run.config.batch_size
     trn_dl = DataLoader(trn_ds, batch_size=bs, shuffle=run.config.shuffle_train)
@@ -101,6 +101,7 @@ def _form_parser():
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--augm', type=str, default=None)
     parser.add_argument('--tags', nargs='*')
+    parser.add_argument('--fold', type=int, default=None)
     return parser
 
 def _to_config(args):
@@ -113,7 +114,8 @@ def _to_config(args):
         'plateau': args.plateau,
         'save': args.save,
         'demo': args.demo,
-        'augm': args.augm
+        'augm': args.augm,
+        'fold': args.fold
     }
 
 def _to_data(args):

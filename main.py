@@ -29,10 +29,10 @@ def _run_name(config):
     name += f' lr={config.lr}'
     return name
 
-def main(data, config):
+def main(data, config, tags):
     # wandb
     project_name = get_project_name(data)
-    run = wandb.init(project=project_name, config=config)
+    run = wandb.init(project=project_name, config=config, tags=tags)
     run.name = _run_name(run.config)
     
     # config env
@@ -96,6 +96,7 @@ def _form_parser():
     parser.add_argument('--save', action='store_true')
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--augm', type=str, default=None)
+    parser.add_argument('--tags', nargs='*')
     return parser
 
 def _to_config(args):
@@ -123,4 +124,4 @@ if __name__ == '__main__':
     config = _to_config(args)
     data = _to_data(args)
     print(data, config)
-    main(data, config)
+    main(data, config, args.tags)

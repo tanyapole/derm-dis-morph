@@ -65,6 +65,7 @@ def main(data, config, tags):
 
     # Training
     torch.set_num_threads(2)
+    best_D = {}
     common_params = {'model': model, 'optimizer': optimizer, 'loss_fn': loss_fn, 'device': device}
     for epoch in tqdm(list(range(run.config.epochs)), desc='Epoch'):
         D = {'epoch': epoch}
@@ -78,9 +79,12 @@ def main(data, config, tags):
         D = training.append_dict(D, metrics)
 
         wandb.log(D)
+        best_D = training.update_dict(best_D, D)
+        for k, v in best_D.items(): run.summary[k] = v
+        # print('acc=', D[target_metric], 'lr=', optimizer.param_groups[0]['lr'])
+            
         if run.config.save: model_saver.update(model, D)
         if run.config.plateau: scheduler.step(D[target_metric])
-        # print('acc=', D[target_metric], 'lr=', optimizer.param_groups[0]['lr'])
 
     run.finish();
     

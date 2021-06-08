@@ -4,6 +4,7 @@ import numpy as np
 from tqdm.auto import tqdm
 import torch
 import torch.nn as nn
+import math
 
 
 def _mean(L:list): return sum(L)/len(L)
@@ -67,3 +68,22 @@ def append_dict(D1, D2):
     for k,v in D1.items(): D[k] = v
     for k,v in D2.items(): D[k] = v
     return D
+
+def _min(v1, v2):
+    if v1 is None or math.isnan(v1): return v2
+    return min(v1, v2)
+
+def _max(v1, v2):
+    if v1 is None or math.isnan(v1): return v2
+    return max(v1, v2)
+
+def update_dict(best_D, cur_D):
+    new_best_D = {}
+    for k, v in cur_D.items():
+        if not k in best_D: new_best_D[k] = v
+        else:
+            if 'loss' in k:
+                new_best_D[k] = _min(best_D[k], v)
+            else:
+                new_best_D[k] = _max(best_D[k], v)
+    return new_best_D

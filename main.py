@@ -7,7 +7,7 @@ import data_handling
 import augmenting as A
 
 # training
-import model_saving, training, model_creating
+import model_saving, training, model_creating, metrics
 import wandb
 import torch, torch.nn as nn
 from tqdm.auto import tqdm
@@ -57,7 +57,7 @@ def main(data, config, tags):
     # Prepare training
     NUM_CLASSES = get_num_classes(data)
     class_mode = get_class_mode(data)
-    loss_fn = training.create_loss_fn(class_mode)
+    loss_fn = metrics.create_loss_fn(class_mode)
     model = model_creating.create_model(NUM_CLASSES).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=run.config.lr)
     if run.config.plateau:
@@ -71,15 +71,15 @@ def main(data, config, tags):
         D = {'epoch': epoch}
 
         losses, preds, targs = training.step(trn_dl, training.Mode.Train, 'Train', **common_params)
-        metrics = training.compute_metrics(class_mode, 'trn', losses, preds, targs)
-        D = training.append_dict(D, metrics)
+        upD = metrics.compute_metrics(class_mode, 'trn', losses, preds, targs)
+        D = metrics.append_dict(D, upD)
 
         losses, preds, targs = training.step(val_dl, training.Mode.Eval, 'Valid', **common_params)
-        metrics = training.compute_metrics(class_mode, 'val', losses, preds, targs)
-        D = training.append_dict(D, metrics)
+        upD = metrics.compute_metrics(class_mode, 'val', losses, preds, targs)
+        D = metrics.append_dict(D, upD)
 
         wandb.log(D)
-        best_D = training.update_dict(best_D, D)
+        best_D = metrics.update_dict(best_D, D)
         for k, v in best_D.items(): run.summary[k] = v
         # print('acc=', D[target_metric], 'lr=', optimizer.param_groups[0]['lr'])
             

@@ -1,5 +1,5 @@
 from enum import Enum
-import training, data_handling
+import data_handling, metrics
 
 
 class Data(Enum):
@@ -12,9 +12,9 @@ def get_project_name(data:Data):
     
 def get_class_mode(data:Data):
     if data == Data.Diseases:
-        return training.ClassificationMode.Multiclass
+        return metrics.ClassificationMode.Multiclass
     else:
-        return training.ClassificationMode.Multilabel
+        return metrics.ClassificationMode.Multilabel
     
 def get_ds_create_fn(data:Data):
     if data == Data.Diseases:

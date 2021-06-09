@@ -49,9 +49,10 @@ def load_data(ds_names):
     print(f'Hadling {len(idxs)} data instances')
     diseases = {(ds_name, i): metadata[ds_name][i][2] for (ds_name, i) in idxs}
     morph = {(ds_name, i): metadata[ds_name][i][3] for (ds_name, i) in idxs}
-    imgs = {ds_name: _load_ds_imgs(ds_name, metadata[ds_name]) for ds_name in ds_names}
-    imgs = {(ds, i): imgs[ds][i] for (ds, i) in idxs}
-    return idxs, imgs, diseases, morph
+    img_paths = {(ds_name, i): metadata[ds_name][i][1] for (ds_name, i) in idxs}
+    # imgs = {ds_name: _load_ds_imgs(ds_name, metadata[ds_name]) for ds_name in ds_names}
+    # imgs = {(ds, i): imgs[ds][i] for (ds, i) in idxs}
+    return idxs, img_paths, diseases, morph
 
 
 _normalize = TF.Normalize(mean=[0.485, 0.456, 0.406],
@@ -102,24 +103,24 @@ def _create_split(fold, idxs, diseases):
     splits =list(skf.split(idxs, diseases))    
     trn, val = splits[fold]
     return [idxs[i] for i in trn], [idxs[i] for i in val]
-        
+
+def _load_imgs(idxs, img_paths):
+    return {idx: _load_img(img_paths[idx]) for idx in tqdm(idxs)}        
     
-def create_disease_datasets(trn_augm, demo:bool, fold=None):
-    IS_DEMO = demo
-    datasets = get_ds_names(IS_DEMO)
+def create_disease_datasets(trn_augm, is_demo:bool, fold=None, only_val=False):
+    datasets = get_ds_names(is_demo)
     print('Using datasets: ', ', '.join(datasets))
 
-    idxs, imgs, diseases, _ = load_data(datasets)
-
+    idxs, img_paths, diseases, _ = load_data(datasets)
     trn_idxs, val_idxs =  _create_split(fold, idxs, diseases)
     
-    trn_ds = DiseaseDataset(trn_idxs, imgs, diseases, trn_augm)
-    val_ds = DiseaseDataset(val_idxs, imgs, diseases)
+    val_ds = DiseaseDataset(val_idxs, _load_imgs(val_idxs, img_paths), diseases)
+    if only_val: return val_ds
+    trn_ds = DiseaseDataset(trn_idxs, _load_imgs(trn_idxs, img_paths), diseases, trn_augm)
     return trn_ds, val_ds
 
-def create_primary_datasets(trn_augm, demo:bool, fold=None):
-    IS_DEMO = demo
-    datasets = get_ds_names(IS_DEMO)
+def create_primary_datasets(trn_augm, is_demo:bool, fold=None, only_val=False):
+    datasets = get_ds_names(is_demo)
     print('Using datasets: ', ', '.join(datasets))
 
     idxs, imgs, diseases, morph = load_data(datasets)
@@ -129,8 +130,9 @@ def create_primary_datasets(trn_augm, demo:bool, fold=None):
     trn_idxs = [idx for idx in trn_idxs if len(primary[idx]) > 0]
     val_idxs = [idx for idx in val_idxs if len(primary[idx]) > 0]
     
-    trn_ds = PrimaryMorphDataset(trn_idxs, imgs, primary, trn_augm)
-    val_ds = PrimaryMorphDataset(val_idxs, imgs, primary)
+    val_ds = PrimaryMorphDataset(val_idxs, _load_imgs(val_idxs, img_paths), primary)
+    if only_val: return val_ds
+    trn_ds = PrimaryMorphDataset(trn_idxs, _load_imgs(trn_idxs, img_paths), primary, trn_augm)
     return trn_ds, val_ds
 
 def show_tensor(img):

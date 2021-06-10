@@ -93,49 +93,52 @@ def primary_to_ohe(primary):
     for i in primary: ohe[i] = 1
     return ohe
 
+class AugmDataset(Dataset):
+    def __init__(self, base_ds, augm):
+        self.ds = base_ds
+        self.augm = A.get_augm(augm)
+    def __len__(self): return len(self.ds)
+    def __getitem__(self, i):
+        img, lbl = self.ds[i]
+        return _prepare_img(img, self.augm), lbl
+
 class DiseaseDataset(Dataset):
-    def __init__(self, idxs, metadata, img_size, augm=None):
+    def __init__(self, idxs, metadata, img_size):
         self.idxs = idxs
         self.diseases = _get_diseases(idxs, metadata)
         self.imgs = _load_imgs(idxs, metadata, img_size)
-        self.augm = A.get_augm(augm)
     def __len__(self): return len(self.idxs)
     def __getitem__(self, i):
         idx = self.idxs[i]
-        img, lbl = self.imgs[idx], self.diseases[idx]
-        img = _prepare_img(img, self.augm)
-        return img, lbl
+        return self.imgs[idx], self.diseases[idx]
     
 class PrimaryMorphDataset(Dataset):
-    def __init__(self, idxs, metadata, img_size, augm=None):
+    def __init__(self, idxs, metadata, img_size):
         primary = _get_primary_morph(idxs, metadata)
         idxs = [idx for idx in idxs if len(primary[idx]) > 0]
         self.idxs = idxs
         self.primary = {k: primary_to_ohe(v) for k,v in primary.items() if k in self.idxs}
         self.imgs = _load_imgs(idxs, metadata, img_size)
-        self.augm = A.get_augm(augm)
     def __len__(self): return len(self.idxs)
     def __getitem__(self, i):
         idx = self.idxs[i]
-        img, lbl = self.imgs[idx], self.primary[idx]
-        img = _prepare_img(img, self.augm)
-        return img, lbl
+        return self.imgs[idx], self.primary[idx]
 
-def create_trn_val_ds(ds_names, ds_class, img_size, fold, trn_augm, val_augm):
+def create_trn_val_ds(ds_names, ds_class, img_size, fold):
     metadata = load_metadata(ds_names)
     trn, val = get_split(ds_names, metadata, fold=fold)
-    trn_ds = ds_class(trn, metadata, img_size, trn_augm)
-    val_ds = ds_class(val, metadata, img_size, val_augm)
+    trn_ds = ds_class(trn, metadata, img_size)
+    val_ds = ds_class(val, metadata, img_size)
     return trn_ds, val_ds
-def create_val_ds(ds_names, ds_class, img_size, fold, augm):
+def create_val_ds(ds_names, ds_class, img_size, fold):
     metadata = load_metadata(ds_names)
     trn, val = get_split(ds_names, metadata, fold=fold)
-    val_ds = ds_class(val, metadata, img_size, augm)
+    val_ds = ds_class(val, metadata, img_size)
     return val_ds
-def create_total_ds(ds_names, ds_class, img_size, augm):
+def create_total_ds(ds_names, ds_class, img_size):
     metadata = load_metadata(ds_names)
     total = get_no_split(ds_names, metadata)
-    return ds_class(total, metadata, img_size, augm)
+    return ds_class(total, metadata, img_size)
 
 def show_tensor(img):
     img = img * torch.Tensor([0.229, 0.224, 0.225]).view(3,1,1) + torch.Tensor([0.485, 0.456, 0.406]).view(3,1,1)

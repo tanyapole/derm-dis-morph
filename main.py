@@ -46,17 +46,15 @@ def main(data, config, tags):
     
     # data loading
     trn_ds, val_ds = data_handling.create_trn_val_ds(
-        get_ds_names(allowed=True, is_demo=IS_DEMO), 
+        data_handling.get_ds_names(allowed=True, is_demo=IS_DEMO), 
         get_ds_class(data),
         run.config.img_size,
         run.config.fold,
-        trn_augm=run.config.augm,
-        val_augm=None
     )
 
     bs = run.config.batch_size
-    trn_dl = DataLoader(trn_ds, batch_size=bs, shuffle=run.config.shuffle_train)
-    val_dl = DataLoader(val_ds, batch_size=bs, shuffle=False)
+    trn_dl = DataLoader(data_handling.AugmDataset(trn_ds, run.config.augm), batch_size=bs, shuffle=run.config.shuffle_train)
+    val_dl = DataLoader(data_handling.AugmDataset(val_ds, None), batch_size=bs, shuffle=False)
 
     # Prepare training
     NUM_CLASSES = get_num_classes(data)

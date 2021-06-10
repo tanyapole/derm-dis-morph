@@ -17,9 +17,9 @@ def _read_pickle(fname):
         _ = pickle.load(f)
     return _
 
-def _load_img(pt): 
+def _load_img(pt, size=224): 
     img = np.array(Image.open(str(pt)))
-    img = cv2.resize(img, (224,224))
+    img = cv2.resize(img, (size,size))
     return img
 
 
@@ -40,8 +40,8 @@ def get_ds_names(is_demo):
 def _load_ds_metadata(ds_name):
     return _read_pickle(ds_name)
 
-def _load_ds_imgs(ds_name, ds_metadata):
-    return [_load_img(el[1]) for el in tqdm(ds_metadata, desc=ds_name)]
+def _load_ds_imgs(ds_name, ds_metadata, size):
+    return [_load_img(el[1],size) for el in tqdm(ds_metadata, desc=ds_name)]
 
 def load_data(ds_names):
     metadata = {ds_name: _load_ds_metadata(ds_name) for ds_name in ds_names}
@@ -104,19 +104,19 @@ def _create_split(fold, idxs, diseases):
     trn, val = splits[fold]
     return [idxs[i] for i in trn], [idxs[i] for i in val]
 
-def _load_imgs(idxs, img_paths):
-    return {idx: _load_img(img_paths[idx]) for idx in tqdm(idxs)}        
+def _load_imgs(idxs, img_paths, size=224):
+    return {idx: _load_img(img_paths[idx], size) for idx in tqdm(idxs)}        
     
-def create_disease_datasets(trn_augm, is_demo:bool, fold=None, only_val=False):
+def create_disease_datasets(trn_augm, is_demo:bool, fold=None, size=224, only_val=False):
     datasets = get_ds_names(is_demo)
     print('Using datasets: ', ', '.join(datasets))
 
     idxs, img_paths, diseases, _ = load_data(datasets)
     trn_idxs, val_idxs =  _create_split(fold, idxs, diseases)
     
-    val_ds = DiseaseDataset(val_idxs, _load_imgs(val_idxs, img_paths), diseases)
+    val_ds = DiseaseDataset(val_idxs, _load_imgs(val_idxs, img_paths, size), diseases)
     if only_val: return val_ds
-    trn_ds = DiseaseDataset(trn_idxs, _load_imgs(trn_idxs, img_paths), diseases, trn_augm)
+    trn_ds = DiseaseDataset(trn_idxs, _load_imgs(trn_idxs, img_paths, size), diseases, trn_augm)
     return trn_ds, val_ds
 
 def create_primary_datasets(trn_augm, is_demo:bool, fold=None, only_val=False):

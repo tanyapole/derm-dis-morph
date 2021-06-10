@@ -11,6 +11,12 @@ class ClassificationMode(Enum):
     Multiclass = 'multiclass'
     Multilabel = 'multilabel'
     
+def get_post_tfm(class_mode:ClassificationMode):
+    if class_mode == ClassificationMode.Multiclass:
+        return nn.Softmax(dim=1)
+    else:
+        return nn.Sigmoid()
+    
 def create_loss_fn(class_mode):
     if class_mode == ClassificationMode.Multiclass:
         return nn.CrossEntropyLoss()

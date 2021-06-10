@@ -16,11 +16,11 @@ def get_class_mode(data:Data):
     else:
         return metrics.ClassificationMode.Multilabel
     
-def get_ds_create_fn(data:Data):
+def get_ds_class(data:Data):
     if data == Data.Diseases:
-        return data_handling.create_disease_datasets
+        return data_handling.DiseaseDataset
     else:
-        return data_handling.create_primary_datasets
+        return data_handling.PrimaryMorphDataset
     
 def get_num_classes(data:Data):
     if data == Data.Diseases:

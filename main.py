@@ -4,7 +4,6 @@ from data_specific import *
 # data
 from torch.utils.data import DataLoader
 import data_handling
-import augmenting as A
 
 # training
 import model_saving, training, model_creating, metrics
@@ -46,9 +45,14 @@ def main(data, config, tags):
         print(model_saver.save_fldr)
     
     # data loading
-    trn_augm = A.get_augm(run.config.augm)
-    ds_create_fn = get_ds_create_fn(data)
-    trn_ds, val_ds = ds_create_fn(trn_augm, IS_DEMO, run.config.fold, run.config.img_size)
+    trn_ds, val_ds = data_handling.create_trn_val_ds(
+        get_ds_names(allowed=True, is_demo=IS_DEMO), 
+        get_ds_class(data),
+        run.config.img_size,
+        run.config.fold,
+        trn_augm=run.config.augm,
+        val_augm=None
+    )
 
     bs = run.config.batch_size
     trn_dl = DataLoader(trn_ds, batch_size=bs, shuffle=run.config.shuffle_train)

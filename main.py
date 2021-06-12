@@ -45,8 +45,12 @@ def main(data, config, tags):
         print(model_saver.save_fldr)
     
     # data loading
+    if run.config.datasets is None:
+        ds_names = data_handling.get_ds_names(allowed=True, is_demo=IS_DEMO)
+    else:
+        ds_names = run.config.datasets.split(",")
     trn_ds, val_ds = data_handling.create_trn_val_ds(
-        data_handling.get_ds_names(allowed=True, is_demo=IS_DEMO), 
+        ds_names, 
         get_ds_class(data),
         run.config.img_size,
         run.config.fold,
@@ -105,6 +109,7 @@ def _form_parser():
     parser.add_argument('--tags', nargs='*')
     parser.add_argument('--fold', type=int, default=None)
     parser.add_argument('--img_size', type=int, default=224)
+    parser.add_argument('--datasets', nargs='*', required=False)
     return parser
 
 def _to_config(args):
@@ -119,7 +124,8 @@ def _to_config(args):
         'demo': args.demo,
         'augm': args.augm,
         'fold': args.fold,
-        'img_size': args.img_size
+        'img_size': args.img_size,
+        'datasets': ",".join(args.datasets)
     }
 
 def _to_data(args):

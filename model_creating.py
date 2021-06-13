@@ -5,10 +5,9 @@ from pathlib import Path
 
 def create_model(num_classes, dropout=False):
     model = resnet34(pretrained=True)
-    model.fc = nn.Linear(model.fc.in_features, num_classes, bias=(model.fc.bias is None))
     if dropout:
         model.fc = nn.Sequential(
-            nn.Dropout2d(),
+            nn.Dropout(),
             nn.Linear(model.fc.in_features, num_classes, bias=(model.fc.bias is None))
         )
     else:

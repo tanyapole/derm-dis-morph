@@ -125,17 +125,20 @@ class PrimaryMorphDataset(Dataset):
         return self.imgs[idx], self.primary[idx]
 
 def create_trn_val_ds(ds_names, ds_class, img_size, fold):
+    print('creating dataset from: ', ','.join(ds_names))
     metadata = load_metadata(ds_names)
     trn, val = get_split(ds_names, metadata, fold=fold)
     trn_ds = ds_class(trn, metadata, img_size)
     val_ds = ds_class(val, metadata, img_size)
     return trn_ds, val_ds
 def create_val_ds(ds_names, ds_class, img_size, fold):
+    print('creating dataset from: ', ','.join(ds_names))
     metadata = load_metadata(ds_names)
     trn, val = get_split(ds_names, metadata, fold=fold)
     val_ds = ds_class(val, metadata, img_size)
     return val_ds
 def create_total_ds(ds_names, ds_class, img_size):
+    print('creating dataset from: ', ','.join(ds_names))
     metadata = load_metadata(ds_names)
     total = get_no_split(ds_names, metadata)
     return ds_class(total, metadata, img_size)

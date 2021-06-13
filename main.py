@@ -63,8 +63,13 @@ def main(data, config, tags):
     # Prepare training
     NUM_CLASSES = get_num_classes(data)
     class_mode = get_class_mode(data)
-    loss_fn = metrics.create_loss_fn(class_mode)
-    model = model_creating.create_model(NUM_CLASSES).to(device)
+    if run.config.weighted_loss:
+        weights = metrics.create_weights(class_mode, trn_ds, NUM_CLASSES).to(device)
+        print('Using loss weights: ', weights)
+    else:
+        weights = None
+    loss_fn = metrics.create_loss_fn(class_mode, weights)
+    model = model_creating.create_model(NUM_CLASSES, run.config.dropout).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=run.config.lr)
     if run.config.plateau:
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=5, threshold=0.001)
@@ -110,6 +115,8 @@ def _form_parser():
     parser.add_argument('--fold', type=int, default=None)
     parser.add_argument('--img_size', type=int, default=224)
     parser.add_argument('--datasets', nargs='*', required=False)
+    parser.add_argument('--weighted_loss', action='store_true')
+    parser.add_argument('--dropout', action='store_true')
     return parser
 
 def _to_config(args):
@@ -125,7 +132,9 @@ def _to_config(args):
         'augm': args.augm,
         'fold': args.fold,
         'img_size': args.img_size,
-        'datasets': ",".join(args.datasets)
+        'datasets': ",".join(args.datasets),
+        'weighted_loss': args.weighted_loss,
+        'dropout': args.dropout
     }
 
 def _to_data(args):

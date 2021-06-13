@@ -16,12 +16,28 @@ def get_post_tfm(class_mode:ClassificationMode):
         return nn.Softmax(dim=1)
     else:
         return nn.Sigmoid()
-    
-def create_loss_fn(class_mode):
+
+def _counts(class_mode, ds, num_classes):
     if class_mode == ClassificationMode.Multiclass:
-        return nn.CrossEntropyLoss()
+        weights = torch.zeros((num_classes,))
+        for img,lbl in ds:
+            weights[lbl] += 1
+        return weights
     else:
-        return nn.BCEWithLogitsLoss()
+        weights = torch.zeros((num_classes,))
+        for img,lbl in ds:
+            weights += lbl
+        return weights
+
+def create_weights(class_mode, ds, num_classes):
+    weights = _counts(class_mode, ds, num_classes)
+    return (len(ds) - weights) / weights
+    
+def create_loss_fn(class_mode, weights=None):
+    if class_mode == ClassificationMode.Multiclass:
+        return nn.CrossEntropyLoss(weight=weights)
+    else:
+        return nn.BCEWithLogitsLoss(pos_weight=weights)
     
 def _mean(L:list): return sum(L)/len(L)
 

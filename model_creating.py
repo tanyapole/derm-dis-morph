@@ -3,13 +3,20 @@ import torch, torch.nn as nn
 from pathlib import Path
 
 
-def create_model(num_classes):
+def create_model(num_classes, dropout=False):
     model = resnet34(pretrained=True)
     model.fc = nn.Linear(model.fc.in_features, num_classes, bias=(model.fc.bias is None))
+    if dropout:
+        model.fc = nn.Sequential(
+            nn.Dropout2d(),
+            nn.Linear(model.fc.in_features, num_classes, bias=(model.fc.bias is None))
+        )
+    else:
+        model.fc = nn.Linear(model.fc.in_features, num_classes, bias=(model.fc.bias is None))
     return model
 
-def load_model(fldr, num_classes, device=None):
-    m = create_model(num_classes)
+def load_model(fldr, num_classes, device=None, dropout=False):
+    m = create_model(num_classes, dropout)
     src_fldr = Path('.') #'../derm-dis-morph')
     pt = list((src_fldr/fldr).iterdir())[0]
     m.load_state_dict(torch.load(pt))

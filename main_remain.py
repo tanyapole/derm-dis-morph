@@ -52,7 +52,7 @@ def main(data, config, tags):
     trn_ds_names = run.config.datasets.split(",")
     val_ds_names = get_remaining_datasets(trn_ds_names)
     print('Using for training: ', ','.join(trn_ds_names))
-    print('Using for validation: ', ','.join(eval_ds_names))
+    print('Using for validation: ', ','.join(val_ds_names))
     trn_ds = data_handling.create_total_ds(trn_ds_names, get_ds_class(data), run.config.img_size)
     val_ds = data_handling.create_total_ds(val_ds_names, get_ds_class(data), run.config.img_size)        
 

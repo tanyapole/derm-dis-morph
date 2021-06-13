@@ -131,7 +131,7 @@ def _to_config(args):
         'augm': args.augm,
         'fold': args.fold,
         'img_size': args.img_size,
-        'datasets': ",".join(args.datasets),
+        'datasets': None if args.datasets is None else ",".join(args.datasets),
         'weighted_loss': args.weighted_loss,
         'dropout': args.dropout
     }

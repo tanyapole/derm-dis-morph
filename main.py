@@ -105,15 +105,14 @@ def _form_parser():
     parser.add_argument('--cuda', type=int, required=True)
     parser.add_argument('--batch_size', type=int, default=50)
     parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--shuffle_train', action='store_true')
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--plateau', action='store_true')
     parser.add_argument('--save', action='store_true')
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--augm', type=str, default=None)
     parser.add_argument('--tags', nargs='*')
     parser.add_argument('--fold', type=int, default=None)
-    parser.add_argument('--img_size', type=int, default=224)
+    parser.add_argument('--img_size', type=int, default=448)
     parser.add_argument('--datasets', nargs='*', required=False)
     parser.add_argument('--weighted_loss', action='store_true')
     parser.add_argument('--dropout', action='store_true')
@@ -125,7 +124,7 @@ def _to_config(args):
         'batch_size': args.batch_size,
         'lr': args.lr,
         'epochs': args.epochs,
-        'shuffle_train': args.shuffle_train,
+        'shuffle_train': True,
         'plateau': args.plateau,
         'save': args.save,
         'demo': args.demo,

@@ -51,6 +51,9 @@ def main(data, config, tags):
     # data loading
     trn_ds_names = run.config.datasets.split(",")
     val_ds_names = get_remaining_datasets(trn_ds_names)
+    if run.config.demo:
+        trn_ds_names = trn_ds_names[0:1]
+        val_ds_names = val_ds_names[0:1]
     print('Using for training: ', ','.join(trn_ds_names))
     print('Using for validation: ', ','.join(val_ds_names))
     trn_ds = data_handling.create_total_ds(trn_ds_names, get_ds_class(data), run.config.img_size)
@@ -58,7 +61,7 @@ def main(data, config, tags):
 
     bs = run.config.batch_size
     trn_dl = DataLoader(data_handling.AugmDataset(trn_ds, run.config.augm), batch_size=bs, shuffle=run.config.shuffle_train)
-    val_dl = DataLoader(data_handling.AugmDataset(val_ds, None), batch_size=bs, shuffle=False)
+    val_dl = DataLoader(data_handling.AugmDataset(val_ds, None), batch_size=bs+30, shuffle=False)
 
     # Prepare training
     NUM_CLASSES = get_num_classes(data)

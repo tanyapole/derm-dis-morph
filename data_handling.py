@@ -99,8 +99,20 @@ class AugmDataset(Dataset):
         self.augm = A.get_augm(augm)
     def __len__(self): return len(self.ds)
     def __getitem__(self, i):
-        img, lbl = self.ds[i]
-        return _prepare_img(img, self.augm), lbl
+        img, *lbl = self.ds[i]
+        return (_prepare_img(img, self.augm), *lbl)
+    
+class CombinedDataset(Dataset):
+    def __init__(self, idxs, metadata, img_size):
+        self.idxs = idxs
+        self.diseases = _get_diseases(idxs, metadata)
+        primary = _get_primary_morph(idxs, metadata)
+        self.primary = {k: primary_to_ohe(v) for k,v in primary.items()}
+        self.imgs = _load_imgs(idxs, metadata, img_size)
+    def __len__(self): return len(self.idxs)
+    def __getitem__(self, i):
+        idx = self.idxs[i]
+        return self.imgs[idx], self.diseases[idx], self.primary[idx]
 
 class DiseaseDataset(Dataset):
     def __init__(self, idxs, metadata, img_size):
